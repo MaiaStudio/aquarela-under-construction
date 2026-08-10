@@ -1,0 +1,5 @@
+.originkit/
+node_modules/
+dist/
+.codex-static-server.cjs
+SKILL - FrontEnd.md

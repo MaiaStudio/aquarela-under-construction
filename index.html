@@ -36,6 +36,12 @@
       </nav>
 
       <section class="hero" id="top" aria-labelledby="hero-title">
+        <div
+          class="hero-topography"
+          data-topography="light"
+          aria-hidden="true"
+        ></div>
+
         <div class="headline-wrap">
           <p class="eyebrow">under construction</p>
           <div class="mesh-headline" data-mesh-headline>
@@ -47,21 +53,39 @@
         </div>
 
         <div class="video-cards" aria-label="Selected project previews">
-          <figure class="video-card video-card--soda">
+          <figure
+            class="video-card video-card--soda"
+            role="button"
+            tabindex="0"
+            aria-expanded="false"
+            aria-label="Expand Soda project preview"
+          >
             <video autoplay muted loop playsinline preload="metadata">
               <source src="Assets/videos/soda.mp4" type="video/mp4" />
             </video>
             <figcaption class="sr-only">Soda project preview</figcaption>
           </figure>
 
-          <figure class="video-card video-card--stride">
+          <figure
+            class="video-card video-card--stride"
+            role="button"
+            tabindex="0"
+            aria-expanded="false"
+            aria-label="Expand Stride project preview"
+          >
             <video autoplay muted loop playsinline preload="metadata">
               <source src="Assets/videos/stride.mp4" type="video/mp4" />
             </video>
             <figcaption class="sr-only">Stride project preview</figcaption>
           </figure>
 
-          <figure class="video-card video-card--ai-studio">
+          <figure
+            class="video-card video-card--ai-studio"
+            role="button"
+            tabindex="0"
+            aria-expanded="false"
+            aria-label="Expand AI Studio project preview"
+          >
             <video autoplay muted loop playsinline preload="metadata">
               <source src="Assets/videos/ai-studio.mp4" type="video/mp4" />
             </video>

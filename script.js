@@ -1,11 +1,16 @@
 document.documentElement.classList.add("js");
 
 const page = document.querySelector(".construction-page");
+const hero = document.querySelector(".hero");
+const navbar = document.querySelector(".navbar");
 const tapeRails = document.querySelectorAll("[data-tape-rail]");
 const footerReveal = document.querySelector(".footer-reveal");
 const footer = document.querySelector(".site-footer");
 const headlineBoundary = document.querySelector(".mesh-headline");
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+const videoCards = [...document.querySelectorAll(".video-card")];
+const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
+const mobileViewport = window.matchMedia("(max-width: 820px)");
 
 const lenis =
   typeof Lenis === "undefined"
@@ -93,6 +98,23 @@ function updateFooterReveal() {
     "--footer-scale",
     (0.985 + easedProgress * 0.015).toFixed(4),
   );
+
+  // Preserve a crisp Hero while the footer comes into view, then ease it into
+  // a dense blur as the footer reaches its fully revealed state.
+  const heroBlurProgress = Math.min(
+    Math.max((easedProgress - 0.7) / 0.3, 0),
+    1,
+  );
+  const easedHeroBlur =
+    heroBlurProgress * heroBlurProgress * (3 - 2 * heroBlurProgress);
+  hero?.style.setProperty(
+    "--hero-blur",
+    `${(easedHeroBlur * 34).toFixed(2)}px`,
+  );
+  navbar?.style.setProperty(
+    "--navbar-blur",
+    `${(easedHeroBlur * 34).toFixed(2)}px`,
+  );
 }
 
 function requestFooterUpdate() {
@@ -103,6 +125,63 @@ window.addEventListener("scroll", requestFooterUpdate, { passive: true });
 window.addEventListener("resize", requestFooterUpdate, { passive: true });
 lenis?.on("scroll", requestFooterUpdate);
 updateFooterReveal();
+
+function initVideoCardInteractions() {
+  if (!hero || !videoCards.length) return;
+
+  const resetParallax = () => {
+    videoCards.forEach((card) => {
+      card.style.setProperty("--card-parallax-x", "0px");
+      card.style.setProperty("--card-parallax-y", "0px");
+    });
+  };
+
+  const setExpandedCard = (selectedCard) => {
+    videoCards.forEach((card) => {
+      const isExpanded = card === selectedCard && !card.classList.contains("is-expanded");
+      card.classList.toggle("is-expanded", isExpanded);
+      card.setAttribute("aria-expanded", String(isExpanded));
+      const projectName = card.querySelector("figcaption")?.textContent?.replace(" project preview", "") ?? "project preview";
+      card.setAttribute(
+        "aria-label",
+        `${isExpanded ? "Minimize" : "Expand"} ${projectName}`,
+      );
+    });
+  };
+
+  hero.addEventListener("pointermove", (event) => {
+    if (!finePointer.matches || reduceMotion.matches) return;
+
+    const bounds = hero.getBoundingClientRect();
+    const x = (event.clientX - bounds.left) / bounds.width - 0.5;
+    const y = (event.clientY - bounds.top) / bounds.height - 0.5;
+
+    videoCards.forEach((card, index) => {
+      const depth = [14, 20, 16][index] ?? 14;
+      const direction = index === 1 ? -1 : 1;
+      card.style.setProperty("--card-parallax-x", `${(x * depth * direction).toFixed(2)}px`);
+      card.style.setProperty("--card-parallax-y", `${(y * depth * direction).toFixed(2)}px`);
+    });
+  });
+
+  hero.addEventListener("pointerleave", resetParallax);
+  finePointer.addEventListener("change", resetParallax);
+  reduceMotion.addEventListener("change", resetParallax);
+
+  videoCards.forEach((card) => {
+    card.addEventListener("click", () => {
+      if (mobileViewport.matches) setExpandedCard(card);
+    });
+
+    card.addEventListener("keydown", (event) => {
+      if (!mobileViewport.matches || (event.key !== "Enter" && event.key !== " ")) return;
+      event.preventDefault();
+      setExpandedCard(card);
+    });
+  });
+}
+
+initVideoCardInteractions();
 
 
 function initMeshHeadline(wrapper) {
@@ -298,7 +377,10 @@ function initMeshHeadline(wrapper) {
     const context = textCanvas.getContext("2d");
     context.scale(dpr, dpr);
     context.clearRect(0, 0, bounds.width, bounds.height);
-    context.fillStyle = "#f5f5f1";
+    context.fillStyle =
+      getComputedStyle(wrapper)
+        .getPropertyValue("--mesh-text-color")
+        .trim() || "#f5f5f1";
     context.textAlign = "left";
     context.textBaseline = "top";
     context.font = `${computed.fontStyle} ${computed.fontWeight} ${fontSize}px ${computed.fontFamily}`;
@@ -431,6 +513,7 @@ const meshHeadline = document.querySelector("[data-mesh-headline]");
 if (meshHeadline) initMeshHeadline(meshHeadline);
 
 function initTopography(container) {
+  const isLightTheme = container.dataset.topography === "light";
   const canvas = document.createElement("canvas");
   const interactionSurface = container.parentElement ?? container;
   const gl = canvas.getContext("webgl2", {
@@ -458,6 +541,7 @@ function initTopography(container) {
     uniform vec2 uMouse;
     uniform float uTime;
     uniform float uMouseActive;
+    uniform float uLightTheme;
     out vec4 fragColor;
 
     void main() {
@@ -485,8 +569,10 @@ function initTopography(container) {
       vec3 graphite = vec3(0.48, 0.5, 0.49);
       vec3 signal = mix(vec3(0.0, 0.8, 0.42), vec3(1.0, 0.9, 0.0), uv.x);
       float accent = pow(smoothstep(0.76, 1.0, elevation), 4.0);
-      vec3 color = mix(graphite, signal, accent * 0.72);
-      float alpha = line * 0.56 + glow * 0.075;
+      vec3 darkColor = mix(graphite, signal, accent * 0.72);
+      vec3 lightColor = mix(vec3(0.34, 0.35, 0.34), vec3(0.15, 0.16, 0.15), accent);
+      vec3 color = mix(darkColor, lightColor, uLightTheme);
+      float alpha = mix(line * 0.56 + glow * 0.075, line * 0.5 + glow * 0.06, uLightTheme);
 
       fragColor = vec4(color, alpha);
     }
@@ -529,6 +615,7 @@ function initTopography(container) {
   const time = gl.getUniformLocation(program, "uTime");
   const mouse = gl.getUniformLocation(program, "uMouse");
   const mouseActive = gl.getUniformLocation(program, "uMouseActive");
+  const lightTheme = gl.getUniformLocation(program, "uLightTheme");
   const pointer = { x: 0.5, y: 0.5, active: 0, target: 0 };
   const startedAt = performance.now();
   let visible = false;
@@ -560,6 +647,7 @@ function initTopography(container) {
     gl.uniform2f(mouse, pointer.x, pointer.y);
     gl.uniform1f(time, (now - startedAt) / 1000);
     gl.uniform1f(mouseActive, pointer.active);
+    gl.uniform1f(lightTheme, isLightTheme ? 1 : 0);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
 
     if (visible && !document.hidden && !reduceMotion.matches) {
@@ -596,5 +684,4 @@ function initTopography(container) {
   if (reduceMotion.matches) render();
 }
 
-const topography = document.querySelector("[data-topography]");
-if (topography) initTopography(topography);
+document.querySelectorAll("[data-topography]").forEach(initTopography);

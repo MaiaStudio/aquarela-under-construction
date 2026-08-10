@@ -1,6 +1,7 @@
 document.documentElement.classList.add("js");
 
 const page = document.querySelector(".construction-page");
+const hero = document.querySelector(".hero");
 const tapeRails = document.querySelectorAll("[data-tape-rail]");
 const footerReveal = document.querySelector(".footer-reveal");
 const footer = document.querySelector(".site-footer");
@@ -92,6 +93,19 @@ function updateFooterReveal() {
   footer.style.setProperty(
     "--footer-scale",
     (0.985 + easedProgress * 0.015).toFixed(4),
+  );
+
+  // Preserve a crisp Hero while the footer comes into view, then ease it into
+  // a dense blur as the footer reaches its fully revealed state.
+  const heroBlurProgress = Math.min(
+    Math.max((easedProgress - 0.7) / 0.3, 0),
+    1,
+  );
+  const easedHeroBlur =
+    heroBlurProgress * heroBlurProgress * (3 - 2 * heroBlurProgress);
+  hero?.style.setProperty(
+    "--hero-blur",
+    `${(easedHeroBlur * 34).toFixed(2)}px`,
   );
 }
 

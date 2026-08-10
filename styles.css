@@ -237,6 +237,7 @@ h1 {
 .mesh-headline {
   position: relative;
   width: 100%;
+  padding-bottom: clamp(12px, 1.1vw, 18px);
   overflow: hidden;
   cursor: crosshair;
   user-select: none;
@@ -829,6 +830,7 @@ h1 {
 
   .mesh-headline {
     width: calc(100% + 18px);
+    padding-bottom: clamp(12px, 3vw, 20px);
   }
 
   .eyebrow {
@@ -837,7 +839,7 @@ h1 {
 
   h1 {
     font-size: clamp(54px, 17vw, 82px);
-    line-height: 0.83;
+    line-height: 0.88;
   }
 
   .tape {
